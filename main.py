@@ -1,4 +1,4 @@
-#!./bin/python
+#!/usr/bin/env python3
 """ The REV app for reading and managing scripture from the Revised English
 Version bible
 
