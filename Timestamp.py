@@ -18,14 +18,18 @@ _FILENAME = 'timestamp.dat'
 
 class Timestamp:
     """ holds time data to be compared with the server """
-    _server_time: datetime.date
-    _local_time: datetime.date | None
+    _server_time: datetime.datetime
+    _local_time: datetime.datetime | None
 
     def __init__(self) -> None:
         request = requests.get(_URL)
         timestamp = request.json()['REV_Timestamp'][0]['timestamp']
-        self._server_time = datetime.date.fromisoformat(timestamp.split()[0])
+        self._server_time = datetime.datetime.fromisoformat(timestamp)
         self.load()
+
+    @property
+    def needs_update(self) -> bool:
+        return self._local_time is None or self._local_time < self._server_time
 
     @property
     def server_time(self):

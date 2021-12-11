@@ -20,5 +20,8 @@ commands:
     (i.e. Jn 3:16)
 """
 
+import Timestamp
+
 if __name__ == '__main__':
-    pass
+    ts = Timestamp.Timestamp()
+    print(ts.needs_update)
