@@ -21,6 +21,8 @@ _FILENAME = 'timestamp.dat'
 
 class Timestamp:
     """ holds time data to be compared with the server """
+    __slots__ = ('__server_time', '__local_time')
+
     __server_time: datetime.datetime
     __local_time: datetime.datetime | None
 
