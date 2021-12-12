@@ -46,15 +46,16 @@ class Verse:
                  verseData=None,
                  commentaryData=None,
                  appendixData=None) -> None:
-        if verseData is not None and commentaryData is not None:
+        if verseData is not None:
             self.__path = BiblePath(verseData.book, verseData.chapter,
                                     verseData.verse)
             self.__style = VerseStyling(verseData.paragraph,
                                         verseData.microheading,
                                         verseData.style)
-            self.__texts = Texts(verseData.heading, verseData.versetext,
-                                 verseData.footnotes,
-                                 commentaryData.commentary)
+            self.__texts = Texts(
+                verseData.heading, verseData.versetext, verseData.footnotes,
+                commentaryData.commentary
+                if commentaryData is not None else '')
         elif appendixData is not None:
             self.__path = appendixData.title
             self.__style = None
@@ -76,9 +77,38 @@ class Verse:
 
 
 class Bible:
-    __slots__ = ('__verses', '__appendices')
-    __verses: dict[BiblePath, Verse]
+    __slots__ = ('__old_testament', '__new_testament', '__appendices')
+    __old_testament: dict[BiblePath, Verse]
+    __new_testament: dict[BiblePath, Verse]
     __appendices: dict[str, Verse]
 
     def __init__(self, bibleJson, commentaryJson, appendixJson) -> None:
-        pass
+        self.__old_testament = {}
+        self.__new_testament = {}
+        self.__appendices = {}
+
+        commentary = commentaryJson['REV_Commentary']
+        commentaryDict = {}
+
+        for comment in commentary:
+            commentaryDict[BiblePath(comment.book, comment.chapter,
+                                     comment.verse)] = comment.commentary
+
+        bible = bibleJson['REV_Bible']
+        new_testament = False
+        for verse in bible:
+            if verse.book.startswith('Matt'):
+                new_testament = True
+            path = BiblePath(verse.book, verse.chapter, verse.verse)
+            commentaryData = commentaryDict.get(path, None)
+            if new_testament:
+                self.__new_testament[path] = Verse(
+                    verseData=verse, commentaryData=commentaryData)
+            else:
+                self.__old_testament[path] = Verse(
+                    verseData=verse, commentaryData=commentaryData)
+
+        appendices = appendixJson['REV_Appendices']
+
+        for appendix in appendices:
+            self.__appendices[appendix.title] = Verse(appendixData=appendix)
