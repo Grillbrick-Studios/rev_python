@@ -1,5 +1,5 @@
-from collections import namedtuple
 from enum import Enum
+from typing import NamedTuple
 
 
 class Style(Enum):
@@ -20,15 +20,23 @@ class ViewMode(Enum):
     Reading = 2
 
 
-BiblePath = namedtuple('BiblePath', [('book', str), ('chapter', int),
-                                     ('verse', int)])
+class BiblePath(NamedTuple):
+    book: str
+    chapter: int
+    verse: int
 
-VerseStyling = namedtuple('VerseStyling', [('paragraph', bool),
-                                           ('microheading', bool),
-                                           ('style', Style)])
 
-Texts = namedtuple('Texts', [('heading', str), ('verse', str),
-                             ('footnotes', list[str]), ('commentary', str)])
+class VerseStyling(NamedTuple):
+    paragraph: bool
+    microheading: bool
+    style: Style
+
+
+class Texts(NamedTuple):
+    heading: str
+    verse: str
+    footnotes: list[str]
+    commentary: str
 
 
 class MissingDataException(Exception):
@@ -47,19 +55,19 @@ class Verse:
                  commentaryData=None,
                  appendixData=None) -> None:
         if verseData is not None:
-            self.__path = BiblePath(verseData.book, verseData.chapter,
-                                    verseData.verse)
-            self.__style = VerseStyling(verseData.paragraph,
-                                        verseData.microheading,
-                                        verseData.style)
+            self.__path = BiblePath(verseData['book'], verseData['chapter'],
+                                    verseData['verse'])
+            self.__style = VerseStyling(verseData['paragraph'],
+                                        verseData['microheading'],
+                                        verseData['style'])
             self.__texts = Texts(
-                verseData.heading, verseData.versetext, verseData.footnotes,
-                commentaryData.commentary
+                verseData['heading'], verseData['versetext'],
+                verseData['footnotes'], commentaryData['commentary']
                 if commentaryData is not None else '')
         elif appendixData is not None:
-            self.__path = appendixData.title
+            self.__path = appendixData['title']
             self.__style = None
-            self.__texts = appendixData.appendix
+            self.__texts = appendixData['appendix']
         else:
             raise MissingDataException()
 
@@ -82,7 +90,8 @@ class Bible:
     __new_testament: dict[BiblePath, Verse]
     __appendices: dict[str, Verse]
 
-    def __init__(self, bibleJson, commentaryJson, appendixJson) -> None:
+    def __init__(self, bibleJson: dict, commentaryJson: dict,
+                 appendixJson: dict) -> None:
         self.__old_testament = {}
         self.__new_testament = {}
         self.__appendices = {}
@@ -91,15 +100,15 @@ class Bible:
         commentaryDict = {}
 
         for comment in commentary:
-            commentaryDict[BiblePath(comment.book, comment.chapter,
-                                     comment.verse)] = comment.commentary
+            commentaryDict[BiblePath(comment['book'], comment['chapter'],
+                                     comment['verse'])] = comment['commentary']
 
         bible = bibleJson['REV_Bible']
         new_testament = False
         for verse in bible:
-            if verse.book.startswith('Matt'):
+            if verse['book'].startswith('Matt'):
                 new_testament = True
-            path = BiblePath(verse.book, verse.chapter, verse.verse)
+            path = BiblePath(verse['book'], verse['chapter'], verse['verse'])
             commentaryData = commentaryDict.get(path, None)
             if new_testament:
                 self.__new_testament[path] = Verse(
@@ -111,14 +120,14 @@ class Bible:
         appendices = appendixJson['REV_Appendices']
 
         for appendix in appendices:
-            self.__appendices[appendix.title] = Verse(appendixData=appendix)
+            self.__appendices[appendix['title']] = Verse(appendixData=appendix)
 
     @property
     def books(self):
         def book(path: BiblePath):
             return path.book
 
-        return (path.book for path in set(
+        return (path for path in set(
             map(book,
                 self.__old_testament.keys()
                 | self.__new_testament.keys())))
