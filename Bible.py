@@ -112,3 +112,29 @@ class Bible:
 
         for appendix in appendices:
             self.__appendices[appendix.title] = Verse(appendixData=appendix)
+
+    @property
+    def books(self):
+        def book(path: BiblePath):
+            return path.book
+
+        return (path.book for path in set(
+            map(book,
+                self.__old_testament.keys()
+                | self.__new_testament.keys())))
+
+    def chapters(self, book: str):
+        def check_book(path: BiblePath):
+            return path.book == book
+
+        return (path.chapter for path in filter(
+            check_book,
+            self.__old_testament.keys() | self.__new_testament.keys()))
+
+    def verses(self, book: str, chapter: int):
+        def check_chapter(path: BiblePath):
+            return path.book == book and path.chapter == chapter
+
+        return (path.verse for path in filter(
+            check_chapter,
+            self.__old_testament.keys() | self.__new_testament.keys()))
