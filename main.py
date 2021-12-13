@@ -20,8 +20,10 @@ commands:
     (i.e. Jn 3:16)
 """
 
-import Timestamp
+from Rev_Data import RevData
 
 if __name__ == '__main__':
-    ts = Timestamp.Timestamp()
-    print(ts.needs_update)
+    data = RevData()
+    print(data.bible.books)
+    print(data.bible.chapters('Genesis'))
+    print(data.bible.verses('Genesis', 1))

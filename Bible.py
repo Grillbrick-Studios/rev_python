@@ -118,18 +118,37 @@ class Bible:
         def book(verse: Verse):
             return verse.path.book
 
-        return (path for path in set(map(book, self.__bible)))
+        bookList = []
+
+        for path in map(book, self.__bible):
+            if path in bookList:
+                continue
+            bookList.append(path)
+
+        return bookList
 
     def chapters(self, book: str):
         def check_book(verse: Verse):
             return verse.path.book == book
 
-        return (verse.path.chapter
-                for verse in set(filter(check_book, self.__bible)))
+        chapterList: list[int] = []
+
+        for verse in filter(check_book, self.__bible):
+            if verse.path.chapter in chapterList:
+                continue
+            chapterList.append(verse.path.chapter)
+
+        return chapterList
 
     def verses(self, book: str, chapter: int):
         def check_chapter(verse: Verse):
             return verse.path.book == book and verse.path.chapter == chapter
 
-        return (verse.path.verse
-                for verse in set(filter(check_chapter, self.__bible)))
+        verseList: list[int] = []
+
+        for verse in filter(check_chapter, self.__bible):
+            if verse.path.verse in verseList:
+                continue
+            verseList.append(verse.path.verse)
+
+        return verseList
