@@ -43,31 +43,31 @@ class MissingDataException(Exception):
     pass
 
 
+class Appendix(NamedTuple):
+    title: str
+    appendix: str
+
+
 class Verse:
     __slots__ = ('__path', '__style', '__texts')
 
-    __path: BiblePath | str
-    __style: VerseStyling | None
-    __texts: Texts | str
+    __path: BiblePath
+    __style: VerseStyling
+    __texts: Texts
 
-    def __init__(self,
-                 verseData=None,
-                 commentaryData=None,
-                 appendixData=None) -> None:
+    def __init__(
+        self,
+        verseData,
+        commentaryData,
+    ) -> None:
         if verseData is not None:
             self.__path = BiblePath(verseData['book'], verseData['chapter'],
                                     verseData['verse'])
             self.__style = VerseStyling(verseData['paragraph'],
                                         verseData['microheading'],
                                         verseData['style'])
-            self.__texts = Texts(
-                verseData['heading'], verseData['versetext'],
-                verseData['footnotes'], commentaryData['commentary']
-                if commentaryData is not None else '')
-        elif appendixData is not None:
-            self.__path = appendixData['title']
-            self.__style = None
-            self.__texts = appendixData['appendix']
+            self.__texts = Texts(verseData['heading'], verseData['versetext'],
+                                 verseData['footnotes'], commentaryData)
         else:
             raise MissingDataException()
 
@@ -85,65 +85,51 @@ class Verse:
 
 
 class Bible:
-    __slots__ = ('__old_testament', '__new_testament', '__appendices')
-    __old_testament: dict[BiblePath, Verse]
-    __new_testament: dict[BiblePath, Verse]
-    __appendices: dict[str, Verse]
+    __slots__ = ('__bible', '__appendices')
+    __bible: list[Verse]
+    __appendices: list[Appendix]
 
     def __init__(self, bibleJson: dict, commentaryJson: dict,
                  appendixJson: dict) -> None:
-        self.__old_testament = {}
-        self.__new_testament = {}
-        self.__appendices = {}
+        self.__bible = []
+        self.__appendices = []
 
         commentary = commentaryJson['REV_Commentary']
-        commentaryDict = {}
+        commentaryDict: dict[BiblePath, str] = {}
 
         for comment in commentary:
             commentaryDict[BiblePath(comment['book'], comment['chapter'],
                                      comment['verse'])] = comment['commentary']
 
         bible = bibleJson['REV_Bible']
-        new_testament = False
         for verse in bible:
-            if verse['book'].startswith('Matt'):
-                new_testament = True
             path = BiblePath(verse['book'], verse['chapter'], verse['verse'])
-            commentaryData = commentaryDict.get(path, None)
-            if new_testament:
-                self.__new_testament[path] = Verse(
-                    verseData=verse, commentaryData=commentaryData)
-            else:
-                self.__old_testament[path] = Verse(
-                    verseData=verse, commentaryData=commentaryData)
+            commentaryData = commentaryDict.get(path, '')
+            self.__bible.append(Verse(verse, commentaryData))
 
         appendices = appendixJson['REV_Appendices']
 
         for appendix in appendices:
-            self.__appendices[appendix['title']] = Verse(appendixData=appendix)
+            self.__appendices.append(
+                Appendix(appendix['title'], appendix['appendix']))
 
     @property
     def books(self):
-        def book(path: BiblePath):
-            return path.book
+        def book(verse: Verse):
+            return verse.path.book
 
-        return (path for path in set(
-            map(book,
-                self.__old_testament.keys()
-                | self.__new_testament.keys())))
+        return (path for path in set(map(book, self.__bible)))
 
     def chapters(self, book: str):
-        def check_book(path: BiblePath):
-            return path.book == book
+        def check_book(verse: Verse):
+            return verse.path.book == book
 
-        return (path.chapter for path in filter(
-            check_book,
-            self.__old_testament.keys() | self.__new_testament.keys()))
+        return (verse.path.chapter
+                for verse in set(filter(check_book, self.__bible)))
 
     def verses(self, book: str, chapter: int):
-        def check_chapter(path: BiblePath):
-            return path.book == book and path.chapter == chapter
+        def check_chapter(verse: Verse):
+            return verse.path.book == book and verse.path.chapter == chapter
 
-        return (path.verse for path in filter(
-            check_chapter,
-            self.__old_testament.keys() | self.__new_testament.keys()))
+        return (verse.path.verse
+                for verse in set(filter(check_chapter, self.__bible)))
