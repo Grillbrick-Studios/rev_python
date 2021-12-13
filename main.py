@@ -24,6 +24,8 @@ from Rev_Data import RevData
 
 if __name__ == '__main__':
     data = RevData()
-    print(data.bible.books)
-    print(data.bible.chapters('Genesis'))
-    print(data.bible.verses('Genesis', 1))
+    # print(data.bible.books)
+    # print(data.bible.chapters('Genesis'))
+    # print(data.bible.verses('Genesis', 1))
+    # print(data.bible.appendices)
+    # print(data.bible.appendix(data.bible.appendices[0]))

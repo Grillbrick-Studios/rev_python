@@ -152,3 +152,16 @@ class Bible:
             verseList.append(verse.path.verse)
 
         return verseList
+
+    @property
+    def appendices(self):
+        def title(appendix: Appendix):
+            return appendix.title
+
+        return [appendix for appendix in map(title, self.__appendices)]
+
+    def appendix(self, title: str):
+        def check_appendix(app: Appendix):
+            return app.title == title
+
+        return next(filter(check_appendix, self.__appendices)).appendix
