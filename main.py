@@ -24,6 +24,7 @@ from Rev_Data import RevData
 
 if __name__ == '__main__':
     data = RevData()
+    print('Data loaded!')
     # print(data.bible.books)
     # print(data.bible.chapters('Genesis'))
     # print(data.bible.verses('Genesis', 1))

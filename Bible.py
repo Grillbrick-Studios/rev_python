@@ -25,6 +25,10 @@ class BiblePath(NamedTuple):
     chapter: int
     verse: int
 
+    def __eq__(self, __o) -> bool:
+        return (self.book == __o.book and self.chapter == __o.chapter
+                and self.verse == __o.verse)
+
 
 class VerseStyling(NamedTuple):
     paragraph: bool
@@ -66,8 +70,10 @@ class Verse:
             self.__style = VerseStyling(verseData['paragraph'],
                                         verseData['microheading'],
                                         verseData['style'])
-            self.__texts = Texts(verseData['heading'], verseData['versetext'],
-                                 verseData['footnotes'], commentaryData)
+            self.__texts = Texts(
+                verseData['heading'], verseData['versetext'],
+                verseData['footnotes'], commentaryData['Commentary']
+                if commentaryData is not None else '')
         else:
             raise MissingDataException()
 
@@ -95,16 +101,17 @@ class Bible:
         self.__appendices = []
 
         commentary = commentaryJson['REV_Commentary']
-        commentaryDict: dict[BiblePath, str] = {}
-
-        for comment in commentary:
-            commentaryDict[BiblePath(comment['book'], comment['chapter'],
-                                     comment['verse'])] = comment['commentary']
 
         bible = bibleJson['REV_Bible']
         for verse in bible:
             path = BiblePath(verse['book'], verse['chapter'], verse['verse'])
-            commentaryData = commentaryDict.get(path, '')
+
+            def check_commentary(comment):
+                return (path.book == comment['book']
+                        and path.chapter == comment['chapter']
+                        and path.verse == comment['verse'])
+
+            commentaryData = next(filter(check_commentary, commentary), None)
             self.__bible.append(Verse(verse, commentaryData))
 
         appendices = appendixJson['REV_Appendices']
@@ -165,3 +172,10 @@ class Bible:
             return app.title == title
 
         return next(filter(check_appendix, self.__appendices)).appendix
+
+    @property
+    def texts(self):
+        def get_text(verse: Verse):
+            return verse.texts
+
+        return [text for text in map(get_text, self.__bible)]
